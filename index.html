@@ -98,9 +98,61 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
 .cfg-input{flex:1;background:transparent;border:none;color:var(--text);font-family:'Share Tech Mono',monospace;font-size:13px;outline:none}
 .cfg-input::placeholder{color:var(--muted)}
 .guide-box{margin-top:16px;padding:16px;background:#04060f;border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:12px;line-height:2.2;color:var(--muted)}
+
+/* ── BOTTOM NAV (mobile) ── */
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:rgba(10,14,26,.97);border-top:1px solid var(--border);backdrop-filter:blur(12px);z-index:200;padding:6px 0 env(safe-area-inset-bottom,6px)}
+.bottom-nav-inner{display:flex;justify-content:space-around;align-items:center}
+.bnav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;cursor:pointer;color:var(--muted);transition:color .2s;min-width:56px}
+.bnav-item.active{color:var(--accent)}
+.bnav-icon{font-size:20px;line-height:1}
+.bnav-label{font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px}
+@media(max-width:680px){
+  .sidebar{display:none}
+  .bottom-nav{display:block}
+  .content{padding:14px;padding-bottom:84px}
+  header{padding:10px 16px}
+  .logo{font-size:16px;letter-spacing:3px}
+  .status-label{font-size:10px}
+  .target-bar{flex-wrap:wrap;gap:8px;padding:12px}
+  .target-input{font-size:13px}
+  .btn{padding:8px 14px;font-size:12px;letter-spacing:1px}
+  .stats-row{grid-template-columns:repeat(2,1fr);gap:10px}
+  .stat-value{font-size:26px}
+  .panels-grid{grid-template-columns:1fr}
+  .modules-grid{grid-template-columns:1fr 1fr}
+  .terminal{height:160px;font-size:11px}
+  .cfg-bar{flex-direction:column;align-items:flex-start;gap:6px}
+  .cfg-label{min-width:unset}
+  .cfg-input{width:100%;font-size:13px}
+  .finding-item{flex-direction:column;gap:6px}
+  .report-area{font-size:11px;max-height:300px}
+  .app{height:auto;min-height:100vh}
+  .main{height:auto;overflow:visible}
+  .content{overflow:visible}
+}
 </style>
 </head>
 <body>
+
+<div class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <div class="bnav-item active" id="bnav-dashboard" onclick="showTab('dashboard')">
+      <span class="bnav-icon">◈</span><span class="bnav-label">HOME</span>
+    </div>
+    <div class="bnav-item" id="bnav-config" onclick="showTab('config')">
+      <span class="bnav-icon">⚙</span><span class="bnav-label">CONFIG</span>
+    </div>
+    <div class="bnav-item" id="bnav-scanner" onclick="showTab('scanner')">
+      <span class="bnav-icon">⊹</span><span class="bnav-label">MODULES</span>
+    </div>
+    <div class="bnav-item" id="bnav-findings" onclick="showTab('findings')">
+      <span class="bnav-icon">⚑</span><span class="bnav-label">FINDINGS</span>
+    </div>
+    <div class="bnav-item" id="bnav-report" onclick="showTab('report')">
+      <span class="bnav-icon">≡</span><span class="bnav-label">REPORT</span>
+    </div>
+  </div>
+</div>
 <div class="app">
   <header>
     <div class="logo"><div class="logo-icon">⬡</div>SENTINEL</div>
@@ -258,70 +310,4 @@ header{display:flex;align-items:center;justify-content:space-between;padding:14p
       <div id="tab-findings" style="display:none">
         <div class="full-panel">
           <div class="panel-header">
-            <span class="panel-title">FINDINGS</span>
-            <span id="findings-count" class="chip chip-off">0 ITEMS</span>
-          </div>
-          <div class="panel-body">
-            <div class="findings-list" id="findings-list">
-              <div style="color:var(--muted);font-family:'Share Tech Mono',monospace;font-size:12px;padding:20px;text-align:center">Run a scan to see findings.</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- REPORT -->
-      <div id="tab-report" style="display:none">
-        <div class="full-panel">
-          <div class="panel-header">
-            <span class="panel-title">REPORT</span>
-            <button class="btn btn-primary" style="font-size:11px;padding:4px 14px" onclick="downloadReport()">EXPORT .TXT</button>
-          </div>
-          <div class="panel-body">
-            <div class="report-area" id="report-area">No report yet. Run a scan first.</div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-
-<script>
-// ─── STATE ───
-const DEFAULT_KEY = "0258c7755437afe8ea54f4314e6ea17e77a31ac34a9b288a";
-let replitUrl  = localStorage.getItem("sentinel_replit") || "";
-let apiKey     = localStorage.getItem("sentinel_key")    || DEFAULT_KEY;
-let activeModules = new Set(["endpoints","headers","xss","sqli","cors","idor","ratelimit","exposure"]);
-let currentJobId = null;
-let pollInterval = null;
-let lastLogCount = 0;
-let logLines = 0;
-
-window.onload = () => {
-  document.getElementById("cfg-replit").value = replitUrl;
-  document.getElementById("cfg-key").value    = apiKey;
-};
-
-function saveConfig() {
-  replitUrl = document.getElementById("cfg-replit").value.trim().replace(/\/$/, "");
-  apiKey    = document.getElementById("cfg-key").value.trim();
-  localStorage.setItem("sentinel_replit", replitUrl);
-  localStorage.setItem("sentinel_key", apiKey);
-  const msg = document.getElementById("cfg-msg");
-  msg.textContent = "✓ Config saved!";
-  msg.style.color = "var(--accent)";
-}
-
-// ─── TABS ───
-function showTab(t) {
-  ["dashboard","config","scanner","findings","report"].forEach(id => {
-    document.getElementById("tab-"+id).style.display = id===t ? "" : "none";
-  });
-  document.querySelectorAll(".nav-item").forEach(el => {
-    el.classList.toggle("active", el.getAttribute("onclick") === `showTab('${t}')`);
-  });
-}
-
-function toggleModule(el) {
-  const m = el.dataset.module;
-  if (activeModules.has(m)) { activeModules.delete(m); el.classList.remove("selected"); el.querySelector(".module-c
+            <span class="pane
